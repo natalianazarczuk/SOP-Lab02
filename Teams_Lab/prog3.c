@@ -18,6 +18,8 @@
 
 volatile sig_atomic_t last_signal = 0;
 
+// This handler for some reason doesn't work
+
 void setHandler(void (*f)(int), int sigNo) {
 
     // This structure specifies how to handle a signal
@@ -97,9 +99,9 @@ void child_work(int number) {
     int t = rand() % (number);
     struct timespec time = {0, t * 100 * 10000};
 
-    // Function sending p SIGUSR1 signals
-
     printf("Ni: %d, C: %d\n", number, t);
+  
+  // Function sending p SIGUSR1 signals
 
     for (int i = 0; i < t; i++) {
 
@@ -114,6 +116,8 @@ void child_work(int number) {
         }
     }
 }
+
+// Creating given amount of children
 
 void create_children(char ** argv, int argc) {
     for (int i = 2; i < argc; i++) {
@@ -131,6 +135,8 @@ void create_children(char ** argv, int argc) {
 }
 
 void parent_work(char * name) {
+  
+    // Opening and creating file with needed arguments
 
     int out;
 
@@ -143,6 +149,8 @@ void parent_work(char * name) {
     while (1) {
 
         while (last_signal == SIGUSR1) {
+          
+            // Writing data to created file
 
             char buf[100] = {'\0'};
 
@@ -154,6 +162,8 @@ void parent_work(char * name) {
             last_signal = 0;
 
         }
+      
+        // If signal is not what we're looking for then parent returns
 
         while (last_signal != SIGUSR1) {
             pid_t p = waitpid(0, NULL, WNOHANG);
