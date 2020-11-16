@@ -13,6 +13,8 @@
                      perror(source),kill(0,SIGKILL),\
                      exit(EXIT_FAILURE))
 
+// Value and handler representing number of received signals
+
 volatile sig_atomic_t i = 0;
 
 void sigusr_handler(int sig) {
@@ -21,28 +23,38 @@ void sigusr_handler(int sig) {
 
 int child_work() {
     signal(SIGUSR1, sigusr_handler);
+  
+    // Getting amount of seconds for which we wait...
 
     srand(getpid());
     int k = rand()%(LIFETIME+1);
     int seconds = 0;
+  
+    // ...and waiting
 
     while(seconds < k) {
         sleep(1);
         seconds++;
         kill(0, SIGUSR1);
     }
+  
+    // After we're finished we're waiting for (10 - waited) more seconds
 
     do {
         seconds = sleep(LIFETIME - k);
     } while (seconds > 0);
 
     fprintf(stdout, "[%d] K=%d\ti=%d\n", getpid(), k, i);
+  
+    // We're operating on bits here, it's pretty fucked up
 
     unsigned int compound = 0;
     compound |= i;
     compound |= (k << 4);
     return compound;
 }
+
+// Creation of n child processes
 
 void create_children(int n) {
     for (int i = 1; i <= n; i++) {
@@ -58,14 +70,20 @@ void create_children(int n) {
     }
 }
 
+// Parent will basically work for kid now
+
 void parent_work() {
     while (1) {
         int status;
         pid_t p = waitpid(0, &status, WNOHANG);
         if(p > 0) {
             unsigned int exit_status = WEXITSTATUS(status);
+          
+            // Getting data from binary variable we created before
+            
             int I = (exit_status & 0x0F);
             int k = (exit_status & 0xF0) >> 4;
+          
             fprintf(stdout, "(%d,%d,%d)", p, k, I);
         }
         if (p < 0 && errno == ECHILD)
